@@ -289,21 +289,18 @@ def reference():
 
 
 
-# ここからテスト
-# ここからテスト
-# ここからテスト
-# ここからテスト
-# ここからテスト
-# ここからテスト
-# スペースでなくタブを使うとエラーとなる？
+# 動画を編集する機能
 # ffmpeg、ffmpegを使用するmoviepyはlolipopサーバーで使用不可
 import requests
 
 @app.route('/editor',methods=['GET','POST'])
 def editor():
     if request.method=='POST':
+        # 編集する動画ファイル
         video = request.files['video']
+        # 編集する音楽ファイル
         music = request.files['music']
+        # 編集するYouTubeのURL
         url = request.form.get("youtube")  
 
         tmpdir = tempfile.mkdtemp()
@@ -318,6 +315,7 @@ def editor():
         video_path=os.path.join(VIDEOS_DIR, video_name)
         video.save(video_path)
 
+        # 音楽ファイルがない場合はYouTubeより音楽抽出
         if music.filename == '':
             data = {
                 "url": url,
@@ -329,6 +327,7 @@ def editor():
                 json=data,
             )
             music_name = "ytmusic.mp3"
+        # 音楽ファイルがある場合
         else:
             music_name = secure_filename(music.filename)
             music_path=os.path.join(MUSIC_DIR, music_name)
@@ -377,6 +376,7 @@ def editor():
         new_video_sec = (len(scene2) - 1 / 2) * Ts
         music_sec = 100
 
+        # 動画時間が音楽時間より長い場合は早送り設定
         x = 1
         if new_video_sec > music_sec:
             x = int(new_video_sec / music_sec)
@@ -408,9 +408,9 @@ def editor():
         video.release()
         cv2.destroyAllWindows()
 
+        # 動画と音楽を結合
         video_path="http://iut-b.main.jp/uploads/driving/"+new_video_name
         music_path="http://iut-b.main.jp/uploads/music/"+music_name
-
         data = {
             "video_path": video_path,
             "music_path": music_path,
@@ -439,6 +439,7 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def selecting_scene(frame_path):
+    # 保存したフレームを分類
     images = [f for f in os.listdir(frame_path) if f[-4:] in [".png", ".jpg"]]
     images = [f for f in os.listdir("./uploads/frames") if f[-4:] in [".png", ".jpg"]]
     data = {
@@ -455,7 +456,7 @@ def selecting_scene(frame_path):
 
     return scene
 
-
+# 編集した動画ファイルのダウンロード
 @app.route('/driving_finished',methods=['GET','POST'])
 def driving_finished():
     if request.method=='POST':
@@ -464,7 +465,7 @@ def driving_finished():
     else:
         return render_template('driving_finished.html')
 
-
+# 編集した動画ファイルのアップロード
 @app.route('/up',methods=['GET','POST'])
 def up():
     if request.method=='POST':
@@ -474,6 +475,7 @@ def up():
     else:
         return render_template('driving_finished.html')
 
+# 編集したYouTube音楽ファイルのアップロード
 @app.route('/up2',methods=['GET','POST'])
 def up2():
     if request.method=='POST':
