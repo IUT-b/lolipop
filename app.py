@@ -290,7 +290,6 @@ def reference():
 
 
 # 動画を編集する機能
-# ffmpeg、ffmpegを使用するmoviepyはlolipopサーバーで使用不可
 import requests
 
 @app.route('/editor',methods=['GET','POST'])
@@ -300,9 +299,10 @@ def editor():
         video = request.files['video']
         # 編集する音楽ファイル
         music = request.files['music']
-        # 編集するYouTubeのURL
+        # 編集するYouTubeのURL（音楽ファイルがない場合）
         url = request.form.get("youtube")  
 
+        # 各種ファイルを保存するディレクトリ設定
         tmpdir = tempfile.mkdtemp()
         VIDEOS_DIR = tmpdir+'/data/video/'
         MUSIC_DIR = tmpdir+'/data/music/'
@@ -311,16 +311,15 @@ def editor():
         os.makedirs(MUSIC_DIR)
         os.makedirs(TARGET_IMAGES_DIR)
 
+        # 動画ファイルの保存
         video_name = secure_filename(video.filename)
         video_path=os.path.join(VIDEOS_DIR, video_name)
         video.save(video_path)
 
-        # 音楽ファイルがない場合はYouTubeより音楽抽出
+        # 音楽ファイルがない場合はYouTubeより音楽抽出し音楽ファイルを保存
         if music.filename == '':
             data = {
                 "url": url,
-                #"url": "https://www.youtube.com/watch?v=yK3sTQLDBjE",
-                #"url":"https://www.youtube.com/watch?v=RbzolUqB8Zw",
             }
             r = requests.post(
                 "https://detector-app-20221031-3-5-d6ljr4zrfa-an.a.run.app/classification",
@@ -354,10 +353,10 @@ def editor():
             i += 1
         video.release()
 
-        # サンプリングしたフレームの分類
+        # サンプリングしたフレームを分類し、分類の切り替わりを抽出
         scene = selecting_scene(frame_path)
 
-
+        # 動画の基本設定
         video = cv2.VideoCapture(video_path)
         width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -387,7 +386,7 @@ def editor():
         cutout_path = app.config['UPLOAD_FOLDER']+'driving/'+new_video_name
         writer = cv2.VideoWriter(cutout_path, fmt, x * frame_rate, size)
 
-        # 動画の切り出し
+        # 動画のシーンを切り出して保存
         for s in scene2:
             start = s * sampling_sec - Ts / 2
             if start < 0:
@@ -421,6 +420,7 @@ def editor():
             json=data,
         )
 
+        # 編集した動画ファイルのファイル名をセッションに保存
         session['new_video_name']=new_video_name
 
 
@@ -440,7 +440,6 @@ def allowed_file(filename):
 
 def selecting_scene(frame_path):
     # 保存したフレームを分類
-    images = [f for f in os.listdir(frame_path) if f[-4:] in [".png", ".jpg"]]
     images = [f for f in os.listdir("./uploads/frames") if f[-4:] in [".png", ".jpg"]]
     data = {
         "url": "http://iut-b.main.jp/uploads/frames/",
