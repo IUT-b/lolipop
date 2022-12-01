@@ -7,18 +7,6 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import statistics
 
-# 株価データ取得処理
-# def stock(brand,start,end):
-#     # 株価データ
-#     df=data.DataReader(brand,'stooq',start,end)
-#     df=df[['Close']]
-#     # 株価データを月単位に間引き
-#     df=df.iloc[::-1]
-#     df=df.reset_index()
-#     df = df.groupby([df['Date'].dt.year, df['Date'].dt.month]).head(1)
-#     df.set_index('Date',inplace = True)
-#     return df
-
 # 株価データ取得処理(csv読込)
 def stock(brand,start,end):
     df=pd.read_csv(f'stock_data/{brand}.csv',index_col=0)
